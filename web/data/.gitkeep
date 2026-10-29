@@ -1,1 +1,3 @@
+# 真实行情数据由 backend.update 在 GitHub Actions 执行成功后生成。
+# 此目录没有演示数据；切勿将演示JSON覆盖到已发布的GitHub Pages。
 
