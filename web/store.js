@@ -1,0 +1,5 @@
+const NAME='astock-trainer',VERSION=1,STORE='sessions';
+function openDB(){return new Promise((resolve,reject)=>{if(!indexedDB){reject(Error('IndexedDB不可用'));return;}const req=indexedDB.open(NAME,VERSION);req.onupgradeneeded=()=>req.result.createObjectStore(STORE);req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
+async function operation(key,method,value){const db=await openDB();return new Promise((resolve,reject)=>{const tx=db.transaction(STORE,method==='get'?'readonly':'readwrite');const req=method==='get'?tx.objectStore(STORE).get(key):tx.objectStore(STORE).put(value,key);req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);tx.oncomplete=()=>db.close();});}
+export async function loadSession(key){try{return await operation(key,'get');}catch{return JSON.parse(localStorage.getItem('a-session:'+key)||'null');}}
+export async function saveSession(key,val){try{await operation(key,'put',val);}catch{localStorage.setItem('a-session:'+key,JSON.stringify(val));}}
