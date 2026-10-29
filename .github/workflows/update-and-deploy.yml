@@ -1,0 +1,66 @@
+name: 每日更新A股行情并发布PWA
+on:
+  workflow_dispatch:
+  schedule:
+    # GitHub Actions supports IANA zones for schedules (2026+)
+    - cron: '25 19 * * 1-5'
+      timezone: 'Asia/Shanghai'
+permissions:
+  contents: read
+jobs:
+  build:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 125
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      - name: 安装行情依赖
+        run: pip install -r requirements.txt
+      - name: 计算当日RPS并下载回放行情
+        run: python -m backend.update --output web/data --rps-window 60
+      # GitHub disables scheduled workflows on public repos after 60 days
+      # without repository activity. Commit ONLY a tiny timestamp once/month,
+      # never the downloaded market data or the user's training sessions.
+      - name: 每30天更新一次仓库活动标记
+        shell: bash
+        run: |
+          python - <<'PYCODE'
+          from datetime import datetime, date
+          from pathlib import Path
+          p=Path('.last-successful-checkin')
+          old=date.fromisoformat(p.read_text().strip()) if p.exists() else date(1970,1,1)
+          now=datetime.utcnow().date()
+          if (now-old).days >= 30:
+              p.write_text(now.isoformat()+'\n')
+          PYCODE
+          if ! git diff --quiet -- .last-successful-checkin || [ -n "$(git ls-files --others --exclude-standard .last-successful-checkin)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add .last-successful-checkin
+            git commit -m "chore: keep daily quote automation active"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+      - name: 设置Pages
+        uses: actions/configure-pages@v5
+      - name: 打包静态网页
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: web
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 发布到GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

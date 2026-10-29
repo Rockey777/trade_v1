@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import {indicators} from '../web/indicators.js';
+import {INITIAL_CASH,newAccount,nextDay,position,accountValue,fees} from '../web/trading.js';
+const bars=Array.from({length:100},(_,i)=>({date:`D${i}`,o:10+i*.01,c:10+i*.01,h:10.1+i*.01,l:9.9+i*.01,v:1000+i}));
+test('indicator arrays no future values',()=>{const out=indicators(bars.slice(0,40));for(const k of ['dif','dea','hist','pdi','mdi','adx','adxr'])assert.equal(out[k].length,40);assert.equal(out.adx[0],null);assert.ok(Number.isFinite(out.dif.at(-1)));});
+test('T-60 initial point and last day stop',()=>{let a=newAccount('600001','2026-10-29',39);for(let i=0;i<60;i++){const r=nextDay(a,bars,'hold');assert.equal(r.success,true);a=r.account;}assert.equal(a.index,99);assert.equal(nextDay(a,bars,'hold').success,false);});
+test('100-share buy and T+1 sell, fee and cash',()=>{let a=newAccount('600001','2026-10-29',39);assert.equal(nextDay(a,bars,'buy',50).success,false);let r=nextDay(a,bars,'buy',100);a=r.account;assert.equal(a.index,40);assert.equal(position(a),100);assert.ok(a.cash<INITIAL_CASH);assert.equal(nextDay(a,bars,'sell',200).success,false);r=nextDay(a,bars,'sell',100);assert.equal(r.success,true);a=r.account;assert.equal(position(a),0);assert.equal(a.trades.length,2);assert.ok(accountValue(a,bars[a.index].c)<INITIAL_CASH+1000);});
+test('price not enough funds rejects and does not advance',()=>{const a=newAccount('600001','2026-10-29',39);const r=nextDay(a,bars,'buy',100000);assert.equal(r.success,false);assert.equal(r.account.index,39);});
+test('one-price limit blocks order but unlocks new day',()=>{const sample=[{date:'D1',o:10,h:10,l:10,c:10,v:100},{date:'D2',o:11,h:11,l:11,c:11,v:100}];const a=newAccount('600001','T',0);const r=nextDay(a,sample,'buy',100);assert.equal(r.success,true);assert.equal(position(r.account),0);assert.equal(r.account.index,1);});
