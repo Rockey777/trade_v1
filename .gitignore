@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.DS_Store
+*.log
+*.tmp
+
+# Generated full-market snapshots are published via GitHub Actions, not checked in
+web/data/*
+!web/data/.gitkeep
