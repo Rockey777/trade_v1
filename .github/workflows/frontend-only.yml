@@ -1,0 +1,50 @@
+name: 前端快速部署（不下载股票行情）
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'web/*.html'
+      - 'web/*.css'
+      - 'web/*.js'
+      - 'web/*.webmanifest'
+      - 'web/assets/**'
+      - 'scripts/reuse_published_data.py'
+      - '.github/workflows/frontend-only.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: 复用已发布行情并打包前端
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 下载已发布的真实行情（不请求行情供应商）
+        run: python scripts/reuse_published_data.py
+      - name: 配置GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: 打包静态网页
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: web
+
+  deploy:
+    name: 发布前端
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 发布到GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
