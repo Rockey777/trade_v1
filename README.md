@@ -1,4 +1,4 @@
-AStock Trainer PWA
+# AStock Trainer PWA
 
 面向**个人安卓手机**的 A股沪深主板 RPS 强势股筛选及60个交易日逐日模拟训练系统。采用**纯静态网页/PWA + Python 数据生成 + GitHub Actions 自动更新**，没有后端常驻服务器、Android SDK 或 APK 的要求。
 
