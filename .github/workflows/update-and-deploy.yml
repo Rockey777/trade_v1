@@ -1,0 +1,79 @@
+name: 每日更新A股行情并发布PWA
+on:
+  workflow_dispatch:
+    inputs:
+      force_data_update:
+        description: '强制检查并更新行情（保留已有61日和1001日缓存）'
+        type: boolean
+        required: false
+        default: true
+  schedule:
+    - cron: '25 19 * * 1-5'
+      timezone: 'Asia/Shanghai'
+    - cron: '25 21 * * 1-5'
+      timezone: 'Asia/Shanghai'
+    - cron: '25 23 * * 1-5'
+      timezone: 'Asia/Shanghai'
+concurrency:
+  group: astock-pages-${{ github.repository }}
+  cancel-in-progress: false
+permissions:
+  contents: read
+jobs:
+  build:
+    outputs:
+      updated: ${{ steps.check.outputs.update_required }}
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 125
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      - name: 安装行情依赖
+        run: pip install -r requirements.txt
+      - name: 检查已发布数据是否为最近完成交易日
+        id: check
+        env:
+          ASTOCK_FORCE_UPDATE: ${{ github.event_name == 'workflow_dispatch' && inputs.force_data_update && 'true' || 'false' }}
+        run: python scripts/check_market_freshness.py
+      - name: 恢复独立持久行情缓存
+        if: steps.check.outputs.update_required == 'true'
+        run: python scripts/restore_market_cache.py
+      - name: 首次缓存初始化时复用已发布股票回放数据
+        if: steps.check.outputs.update_required == 'true'
+        run: python scripts/seed_published_history.py
+      - name: 增量更新RPS60及股票回放K线
+        id: market
+        if: steps.check.outputs.update_required == 'true'
+        run: python -m backend.incremental_update --output web/data --cache-dir .market-cache-state --rps-window 60
+      - name: 无论更新成败均保存已校验的增量缓存
+        if: ${{ always() && steps.check.outputs.update_required == 'true' }}
+        run: python scripts/save_market_cache.py
+      - name: 设置Pages
+        if: ${{ steps.market.outcome == 'success' }}
+        uses: actions/configure-pages@v5
+      - name: 打包静态网页
+        if: ${{ steps.market.outcome == 'success' }}
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: web
+  deploy:
+    needs: build
+    if: needs.build.outputs.updated == 'true' && needs.build.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 发布到GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
