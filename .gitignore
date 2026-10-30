@@ -9,3 +9,6 @@ __pycache__/
 # Generated full-market snapshots are published via GitHub Actions, not checked in
 web/data/*
 !web/data/.gitkeep
+
+.market-cache-state/
+.market-cache-push/
