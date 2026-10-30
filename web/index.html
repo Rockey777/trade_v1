@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/><meta name="theme-color" content="#111b2b"/><meta name="description" content="A股主板低价强势股RPS筛选与60交易日模拟交易"/><link rel="manifest" href="./manifest.webmanifest"/><link rel="icon" type="image/png" href="./assets/icon-192.png"/><link rel="stylesheet" href="./styles.css"/><title>强势股 · 历史训练</title></head>
+<body><div id="app">
+<header class="topbar"><div class="brand"><img src="./assets/icon-192.png" alt=""/><div><strong>强势股训练</strong><small>A股 RPS · 历史回放</small></div></div><button id="refresh" class="icon-btn" title="获取最新选股快照" aria-label="刷新数据">↻</button></header>
+<main>
+<section id="list-view">
+  <div class="hero"><div class="eyebrow">MARKET SNAPSHOT</div><h1>今日强势股票池</h1><p>沪深主板 · ≤15元 · 上市≥1000天 · 非ST</p><div id="data-status" class="data-status">正在读取行情快照…</div></div>
+  <div class="stats"><div><span>入选股票</span><strong id="stat-count">—</strong></div><div><span>RPS周期</span><strong id="stat-rps">—</strong></div><div><span>更新日期</span><strong id="stat-date">—</strong></div></div>
+  <div class="section-head"><h2>筛选结果</h2><small>RPS排名前100 · 不限制当日涨跌幅</small></div>
+  <label class="search-wrap"><span>⌕</span><input id="stock-search" type="search" placeholder="搜索股票代码或名称" autocomplete="off"/></label>
+  <div class="table-head"><span>股票</span><span>现价 / 涨跌幅</span><span>RPS</span></div>
+  <div id="stocks" class="stock-list"></div>
+  <div class="footnote">RPS比较范围为满足基础筛选条件的股票。当前版本默认采用行情接口60日涨跌幅进行全池百分位排名。模拟仅供训练，不构成投资建议。</div>
+</section>
+<section id="trade-view" hidden>
+  <button id="back" class="back-btn">‹ 返回选股</button>
+  <div class="trade-head"><div class="trade-identity"><div class="trade-title-row"><h2 id="trade-name">—</h2><div class="stock-nav" role="group" aria-label="按RPS列表切换股票"><button id="prev-stock" class="stock-nav-btn" type="button" aria-label="上一只股票" title="上一只（按RPS列表顺序）">↑</button><button id="next-stock" class="stock-nav-btn" type="button" aria-label="下一只股票" title="下一只（按RPS列表顺序）">↓</button></div></div><span id="trade-code">—</span></div><div class="right"><strong id="trade-price">—</strong><span id="trade-day">—</span></div></div>
+  <div class="progress-track"><div id="progress-fill"></div></div><div class="progress-info"><span id="progress-text">回放 0 / 60</span><span id="training-rps">RPS —</span></div>
+
+  <div class="account account-compact">
+    <div><small>总资产</small><strong id="balance-total">¥100,000.00</strong><span id="balance-profit">收益率 0.00%</span></div>
+    <div><small>可用资金</small><strong id="balance-cash">¥100,000.00</strong><small id="balance-shares">持仓 0 股</small></div>
+  </div>
+
+  <div class="chart-toolbar compact-toolbar">
+    <div class="indicator-switch" aria-label="副图切换">
+      <button id="indicator-vol" class="switch-btn active" data-indicator="vol">VOL</button>
+      <button id="indicator-macd" class="switch-btn" data-indicator="macd">MACD</button>
+      <button id="indicator-dmi" class="switch-btn" data-indicator="dmi">DMI</button>
+    </div>
+    <button id="reset-zoom" class="subtle-button">重置缩放</button>
+  </div>
+  <div id="chart-container" class="chart-container mobile-optimized"><canvas id="chart" aria-label="K线及可切换副图"></canvas><div id="chart-tooltip" class="chart-tooltip" hidden></div></div>
+  <div class="chart-help">左右滑动查看K线 · 双指缩放 · 点击查看数值</div>
+
+  <div class="order-panel sticky-order-panel">
+    <div class="order-head compact-order-head"><strong>模拟操作</strong><small>收盘决策 · 次日开盘撮合</small></div>
+    <div class="order-inline">
+      <label class="quantity compact-quantity">股数 <input id="quantity" type="number" min="100" step="100" value="100" inputmode="numeric"/><span>100股整数倍</span></label>
+      <div class="actions compact-actions"><button id="buy" class="action buy">买入</button><button id="sell" class="action sell">卖出</button><button id="wait" class="action hold">观望</button></div>
+    </div>
+    <div id="trade-message" class="trade-message">请选择操作以解锁下一交易日</div>
+  </div>
+
+  <div class="section-head records-heading"><h2>交易记录</h2><button id="restart" class="subtle-button danger-text">重新开始</button></div><div id="records" class="records"></div>
+  <p class="footnote">撮合为简化模拟：次日开盘价、A股T+1、最低手续费及卖出印花税；涨跌停一字板不保证可成交。暂未完整处理分红送转及历史ST状态。历史资金收益仅供练习，不等于可实现的真实交易收益。</p>
+</section>
+</main>
+<footer><span>强势股训练 · 仅模拟交易</span><span id="footer-version">离线缓存支持</span></footer>
+</div><script type="module" src="./app.js"></script></body></html>
